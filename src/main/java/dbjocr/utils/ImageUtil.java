@@ -37,7 +37,7 @@ public class ImageUtil {
                 double B = inputRaster.getSample(j, i, 2);
                 double Y = 0.3*R + 0.59*G + 0.11*B;
             
-                outputRaster.setSample(j, i, 0, Y);         
+                outputRaster.setSample(j, i, 0, Y);
             }
         }
         return outputImage;
