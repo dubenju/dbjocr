@@ -15,6 +15,7 @@ public class SudokuPainter extends WebcamPanel.DefaultPainter {
 
     @Override
     public void paintImage(WebcamPanel owner, BufferedImage image, Graphics2D g2) {
+        System.out.println(System.currentTimeMillis());
         super.paintImage(owner, image, g2);
         
         int pw = owner.getWidth();
@@ -90,5 +91,6 @@ public class SudokuPainter extends WebcamPanel.DefaultPainter {
        g2.drawLine(start + step * 6 - 10, step + step * 6 + 10, start + step * 6 - 10, step + step * 6 + 20);
        g2.drawLine(start + step * 6 + 10, step + step * 6 + 10, start + step * 6 + 20, step + step * 6 + 10);
        g2.drawLine(start + step * 6 + 10, step + step * 6 + 10, start + step * 6 + 10, step + step * 6 + 20);
+       System.out.println(System.currentTimeMillis());
     }
 }

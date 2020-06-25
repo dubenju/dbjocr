@@ -13,7 +13,7 @@ import java.util.Map;
 import dbjocr.model.Feature;
 import dbjocr.model.PixelNode;
 import dbjocr.model.Rect;
-import dbjocr.utils.URGBColor;
+import image.URGBColor;
 
 public class Image {
     public static BufferedImage gray_01(BufferedImage image) {
