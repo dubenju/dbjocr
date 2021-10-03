@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1005,13 +1006,15 @@ public class Image {
     public static Feature getFeature(Feature result) {
 
         StringBuffer buf = new StringBuffer();
+
         int split_x_cnt = 5;
         int split_y_cnt = 5;
+
         int x_line = split_x_cnt - 1;
         int y_line = split_y_cnt - 1;
 
         int offset_block = 1;// Block
-        int offset_line_y = offset_block + split_x_cnt * split_y_cnt; // liney
+        int offset_line_y = offset_block + split_x_cnt * split_y_cnt; // line y
         int offset_line_x = offset_line_y + x_line; // line x
 
         /* 0, x1 line1_x x1 + 2 x2 line2_x */
@@ -1019,13 +1022,15 @@ public class Image {
         result.fd_offset_y_block = new int[split_y_cnt];
         result.fd_offset_x_line = new int[x_line];
         result.fd_offset_y_line = new int[y_line];
+        
         /*
          * step * count + (count - 1) =length
          * step = (length + 1) / count - 1;
          */
         int split_x_step = (result.image.getWidth() + 1) / split_x_cnt - 1;
         if (split_x_step <= 0) { split_x_step = 1; }
-        x_line --;
+//System.out.println("split_x_step=" + split_x_step);
+		x_line --;
         for (int idx = result.image.getWidth() - 1, block = split_x_cnt - 1; idx >= 0 && block >= 0; ) {
             result.fd_offset_x_block[block] = idx;
             block --;
@@ -1041,6 +1046,7 @@ public class Image {
 
         int split_y_step = (result.image.getHeight() + 1) / split_y_cnt - 1;
         if (split_y_step <= 0) { split_y_step = 1; }
+//System.out.println("split_y_step=" + split_y_step);
         y_line --;
         for (int idy = result.image.getHeight() - 1, block = split_y_cnt - 1; idy >= 0 && block >= 0; ) {
             result.fd_offset_y_block[block] = idy;
@@ -1116,11 +1122,11 @@ public class Image {
                 if (flag == 1) { offset_b = offset_block + cursor_block_y * split_x_cnt + cursor_block_x; } // block
                 if (flag == 2) { offset_y = offset_line_y + cursor_line_x; } // liney
                 if (flag == 4 || flag == 6) { offset_x = offset_line_x + cursor_line_y; } // linex
-
+//System.out.println("i=" + i + ",j=" + j + "offsetB=" + offset_b + ",offsetX=" + offset_x + ",offsetY=" + offset_y);
                 final int color = result.image.getRGB(i, j);
                 final int r = (color >> 16) & 0xff;
-                final int g = (color >>  8) & 0xff;
-                final int b =  color        & 0xff;
+//                final int g = (color >>  8) & 0xff;
+//                final int b =  color        & 0xff;
                 String colorr = (r > 127 ? "*" : " ");
 
                 // Feature 25 Blocks
@@ -1157,9 +1163,389 @@ public class Image {
         return result;
     }
     
+    public static Feature getFeature2(Feature result) {
+    	int width = result.image.getWidth();
+    	int height = result.image.getHeight();
+    	
+    	int[] w1 = new int[width];
+    	int[] h1 = new int[height];
+    	
+    	for (int j = 0; j < result.image.getHeight(); j ++) {
+    		for (int i = 0; i < result.image.getWidth(); i ++) {
+    			final int color = result.image.getRGB(i, j);
+    			final int r = (color >> 16) & 0xff;
+    			String colorr = (r > 127 ? "*" : " ");
+    			if ("*".equals(colorr)) {
+    				w1[i] ++;
+    				h1[j] ++;
+    			}
+    		}
+    	}
+//    	System.out.println(Arrays.toString(w1) + "," + Arrays.toString(h1));
+
+    	int[] w2 = new int[10];
+    	int[] h2 = new int[10];
+
+    	int offsetw1 = (width - 1) / 9;
+    	int offsetw2 = offsetw1, offsetw3 = offsetw1, offsetw4 = offsetw1, offsetw5 = offsetw1, offsetw6 = offsetw1, offsetw7 = offsetw1, offsetw8 = offsetw1;
+    	int modw = width -1 - offsetw1 * 9;
+    	if (modw >= 1) {offsetw8 ++;}
+    	if (modw >= 2) {offsetw7 ++;}
+    	if (modw >= 3) {offsetw6 ++;}
+    	if (modw >= 4) {offsetw5 ++;}
+    	if (modw >= 5) {offsetw4 ++;}
+    	if (modw >= 6) {offsetw3 ++;}
+    	if (modw >= 7) {offsetw2 ++;}
+    	if (modw >= 8) {offsetw1 ++;}
+
+    	int offseth1 = (height - 1) / 9;
+    	int offseth2 = offseth1, offseth3 = offseth1, offseth4 = offseth1, offseth5 = offseth1, offseth6 = offseth1, offseth7 = offseth1, offseth8 = offseth1;
+    	int modh = height -1 - offseth1 * 9;
+    	if (modh >= 1) {offseth8 ++;}
+    	if (modh >= 2) {offseth7 ++;}
+    	if (modh >= 3) {offseth6 ++;}
+    	if (modh >= 4) {offseth5 ++;}
+    	if (modh >= 5) {offseth4 ++;}
+    	if (modh >= 6) {offseth3 ++;}
+    	if (modh >= 7) {offseth2 ++;}
+    	if (modh >= 8) {offseth1 ++;}
+    	
+    	for(int i = 1; i < width; i ++) {
+    		if (i <= offsetw1) {
+    			w2[1] = Math.max(w2[1], w1[i]);
+    		} else if (i <= (offsetw1 + offsetw2)) {
+    			w2[2] = Math.max(w2[2], w1[i]);
+    		} else if (i <= (offsetw1 + offsetw2 + offsetw3)) {
+    			w2[3] = Math.max(w2[3], w1[i]);
+    		} else if (i <= (offsetw1 + offsetw2 + offsetw3 + offsetw4)) {
+    			w2[4] = Math.max(w2[4], w1[i]);
+    		} else if (i <= (offsetw1 + offsetw2 + offsetw3 + offsetw4 + offsetw5)) {
+    			w2[5] = Math.max(w2[5], w1[i]);
+    		} else if (i <= (offsetw1 + offsetw2 + offsetw3 + offsetw4 + offsetw5 + offsetw6)) {
+    			w2[6] = Math.max(w2[6], w1[i]);
+    		} else if (i <= (offsetw1 + offsetw2 + offsetw3 + offsetw4 + offsetw5 + offsetw6 + offsetw7)) {
+    			w2[7] = Math.max(w2[7], w1[i]);
+    		} else if (i <= (offsetw1 + offsetw2 + offsetw3 + offsetw4 + offsetw5 + offsetw6 + offsetw7 + offsetw8)) {
+    			w2[8] = Math.max(w2[8], w1[i]);
+    		} else {
+    			w2[9] = Math.max(w2[9], w1[i]);
+    		}
+    	}
+    	
+    	for(int i = 1; i < height; i ++) {
+    		if (i <= offseth1) {
+    			h2[1] = Math.max(h2[1], h1[i]);
+    		} else if (i <= (offseth1 + offseth2)) {
+    			h2[2] = Math.max(h2[2], h1[i]);
+    		} else if (i <= (offseth1 + offseth2 + offseth3)) {
+    			h2[3] = Math.max(h2[3], h1[i]);
+    		} else if (i <= (offseth1 + offseth2 + offseth3 + offseth4)) {
+    			h2[4] = Math.max(h2[4], h1[i]);
+    		} else if (i <= (offseth1 + offseth2 + offseth3 + offseth4 + offseth5)) {
+    			h2[5] = Math.max(h2[5], h1[i]);
+    		} else if (i <= (offseth1 + offseth2 + offseth3 + offseth4 + offseth5 + offseth6)) {
+    			h2[6] = Math.max(h2[6], h1[i]);
+    		} else if (i <= (offseth1 + offseth2 + offseth3 + offseth4 + offseth5 + offseth6 + offseth7)) {
+    			h2[7] = Math.max(h2[7], h1[i]);
+    		} else if (i <= (offseth1 + offseth2 + offseth3 + offseth4 + offseth5 + offseth6 + offseth7 + offseth8)) {
+    			h2[8] = Math.max(h2[8], h1[i]);
+    		} else {
+    			h2[9] = Math.max(h2[9], h1[i]);
+    		}
+    	}
+//    	System.out.println(Arrays.toString(w2) + "," + Arrays.toString(h2));
+    	result.rw = new double[10];
+    	for (int i = 0; i < 10; i ++) {
+    		result.rw[i] = w2[i] * 100.0D / (height);
+    	}
+    	result.rh = new double[10];
+    	for (int i = 0; i < 10; i ++) {
+    		result.rh[i] = h2[i] * 100.0D / (width);
+    	}
+    	System.out.println(Arrays.toString(result.rw) + "," + Arrays.toString(result.rh));
+    	return result;
+    }
+    public static Feature getFeature2a(Feature result) {
+    	int width = result.image.getWidth();
+    	int height = result.image.getHeight();
+    	int[] w1 = new int[width];
+    	int[] w2 = new int[width];
+    	int[] w3 = new int[width];
+    	int[] h1 = new int[height];
+    	int[] h2 = new int[height];
+    	int[] h3 = new int[height];
+    	
+    	int offsetw1 = width / 3;
+    	int offsetw2 = offsetw1;
+    	int offsetw3 = offsetw1;
+    	int modw = width - offsetw1 * 3;
+    	if (modw >= 1) {
+    		offsetw3 ++;
+    	}
+    	if (modw > 1) {
+    		offsetw2 ++;
+    	}
+    	
+    	int offseth1 = height / 3;
+    	int offseth2 = offseth1;
+    	int offseth3 = offseth1;
+    	int modh = height - offseth1 * 3;
+    	if (modh >= 1) {
+    		offseth3 ++;
+    	}
+    	if (modh > 1) {
+    		offseth2 ++;
+    	}
+//    	System.out.println("宽:" + width + ",高:" + height + ",坐标1:" + offsetw1 + ",坐标2:" + offsetw2 + ",坐标3:" + offsetw3 + ",坐标4:" + offseth1 + ",坐标5:"  + offseth2 +",坐标6:" + offseth3 + ",modew=" + modw + ",modeh=" + modh);
+    	
+    	int cntw1 = 0, cntw2 = 0, cntw3 = 0, cnth1 = 0, cnth2 = 0, cnth3 = 0;
+    	for (int j = 0; j < result.image.getHeight(); j ++) {
+    		for (int i = 0; i < result.image.getWidth(); i ++) {
+    			final int color = result.image.getRGB(i, j);
+    			final int r = (color >> 16) & 0xff;
+    			String colorr = (r > 127 ? "*" : " ");
+    			if ("*".equals(colorr)) {
+    				if (i <= offsetw1) {
+    					w1[i] = 1;
+    				} else if (i <= (offsetw1 + offsetw2) ) {
+    					w2[i] = 1;
+    				} else {
+    					w3[i] = 1;
+    				}
+    				if (j <= offseth1) {
+    					h1[j] = 1;
+    				} else if (j <= (offseth1 + offseth2) ) {
+    					h2[j] = 1;
+    				} else {
+    					h3[j] = 1;
+    				}
+    			}
+    		}
+    	}
+    	for (int i = 0; i < width; i ++) {if (w1[i] == 1) {cntw1 ++;}}
+    	for (int i = 0; i < width; i ++) {if (w2[i] == 1) {cntw2 ++;}}
+    	for (int i = 0; i < width; i ++) {if (w3[i] == 1) {cntw3 ++;}}
+    	for (int i = 0; i < height; i ++) {if (h1[i] == 1) {cnth1 ++;}}
+    	for (int i = 0; i < height; i ++) {if (h2[i] == 1) {cnth2 ++;}}
+    	for (int i = 0; i < height; i ++) {if (h3[i] == 1) {cnth3 ++;}}
+    	
+//    	System.out.println("cntw1=" + cntw1 + ",cntw2=" + cntw2 + ",cntw3=" + cntw3 + ",cnth1=" + cnth1 + ",cnth2=" + cnth2 + ",cnth3=" + cnth3);
+    	result.rate = new double[6];
+    	result.rate[0] = cntw1 * 1.0D / offsetw1;
+    	result.rate[1] = cntw2 * 1.0D / offsetw2;
+    	result.rate[2] = cntw3 * 1.0D / offsetw3;
+    	result.rate[3] = cnth1 * 1.0D / offseth1;
+    	result.rate[4] = cnth2 * 1.0D / offseth2;
+    	result.rate[5] = cnth3 * 1.0D / offseth3;
+//    	System.out.println("cntw1=" + result.rate[0] + ",cntw2=" + result.rate[1] + ",cntw3=" + result.rate[2] + ",cnth1=" + result.rate[3] + ",cnth2=" + result.rate[4] + ",cnth3=" + result.rate[5]);
+    	return result;
+    }
+
+    public static Feature getFeature3(Feature result) {
+    	int width = result.image.getWidth();
+    	int height = result.image.getHeight();
+    	
+    	int offsetw1 = width / 2;
+    	int offsetw2 = offsetw1;
+    	int modw = width - offsetw1 * 2;
+    	if (modw >= 1) {offsetw2 ++;}
+
+    	int offseth1 = height / 2;
+    	int offseth2 = offseth1;
+    	int modh = height - offseth1 * 2;
+    	if (modh >= 1) {offseth2 ++;}
+System.out.println("{" + width + "," + offsetw1 + "," + offsetw2 +"},{" + height + "," + offseth1 + "," + offseth2 + "}");
+    	int[] h左上 = new int[offseth1 + 1];
+    	int[] h右上 = new int[offseth1 + 1];
+    	int[] h左下 = new int[offseth2 + 1];
+    	int[] h右下 = new int[offseth2 + 1];
+    	
+    	for (int j = 0; j < result.image.getHeight(); j ++) {
+    		for (int i = 0; i < result.image.getWidth(); i ++) {
+    			final int color = result.image.getRGB(i, j);
+    			final int r = (color >> 16) & 0xff;
+    			String colorr = (r > 127 ? "*" : " ");
+    			if ("*".equals(colorr)) {
+    				if (j <= offseth1) {
+    					if (i <= offsetw1) {
+    						h左上[j] ++;
+    					} else {
+    						h右上[j] ++;
+    					}
+    				} else {
+    					if (i <= offsetw1) {
+    						h左下[j - offseth1] ++;
+    					} else {
+    						h右下[j - offseth1] ++;
+    					}
+    				}
+    			}
+    		}
+    	}
+    	System.out.println(Arrays.toString(h左上) + "," + Arrays.toString(h右上) + "," + Arrays.toString(h左下) + "," + Arrays.toString(h右下));
+
+    	result.bgblock = new int[4];
+
+    	int flag1 = 0, flag2 = 0;
+    	for(int i = 1; i <= offseth1; i ++) {
+    		if (h左上[i] == 0) {
+    			if (flag1 == 0) {
+    				flag1 = 1;
+    			} else {
+    				result.bgblock[0] = 1;
+    			}
+    		} else {
+    			flag1 = 0;
+    		}
+    		if (h右上[i] == 0) {
+    			if (flag2 == 0) {
+    				flag2 = 1;
+    			} else {
+    				result.bgblock[1] = 1;
+    			}
+    		} else {
+    			flag2 = 0;
+    		}
+    	}
+    	int flag3 = 0, flag4 = 0;
+    	for(int i = 0; i <= offseth2; i ++) {
+    		if (h左下[i] == 0) {
+    			if (flag3 == 0) {
+    				flag3 = 1;
+    			} else {
+    				result.bgblock[2] = 1;
+    			}
+    		} else {
+    			flag3 = 0;
+    		}
+    		if (h右下[i] == 0) {
+    			if (flag4 == 0) {
+    				flag4 = 1;
+    			} else {
+    				result.bgblock[3] = 1;
+    			}
+    		} else {
+    			flag4 = 0;
+    		}
+    	}
+    	System.out.println(Arrays.toString(result.bgblock));
+    	return result;
+    }
+    public static Feature getFeature4(Feature result) {
+    	int width = result.image.getWidth();
+    	int height = result.image.getHeight();
+
+    	int offsetw1 = (width - 1) / 4;
+    	int offsetw2 = offsetw1, offsetw3 = offsetw1, offsetw4 = offsetw1;
+    	int modw = width -1 - offsetw1 * 4;
+    	if (modw >= 1) {offsetw4 ++;}
+    	if (modw >= 2) {offsetw3 ++;}
+    	if (modw >= 3) {offsetw2 ++;}
+
+    	int offseth1 = (height - 1) / 4;
+    	int offseth2 = offseth1, offseth3 = offseth1, offseth4 = offseth1;
+    	int modh = height -1 - offseth1 * 4;
+    	if (modh >= 1) {offseth4 ++;}
+    	if (modh >= 2) {offseth3 ++;}
+    	if (modh >= 3) {offseth2 ++;}
+    	System.out.println(offsetw1 + "," + offsetw2 + "," + offsetw3 + "," + offsetw4 + "," + offseth1 + "," + offseth2 + "," + offseth3 + "," + offseth4);
+    	
+    	result.across = new int[6];
+    	int flag = 0;
+    	for (int j = 0; j < result.image.getHeight(); j ++) {
+			final int color = result.image.getRGB(offsetw1, j);
+			final int r = (color >> 16) & 0xff;
+			String colorr = (r > 127 ? "*" : " ");
+			if ("*".equals(colorr)) {
+				if (flag == 0) {
+					result.across[0] ++;
+					flag = 1;
+				}
+			} else {
+				flag = 0;
+			}
+    	}
+
+    	flag = 0;
+    	for (int j = 0; j < result.image.getHeight(); j ++) {
+			final int color = result.image.getRGB(offsetw1 + offsetw2, j);
+			final int r = (color >> 16) & 0xff;
+			String colorr = (r > 127 ? "*" : " ");
+			if ("*".equals(colorr)) {
+				if (flag == 0) {
+					result.across[1] ++;
+					flag = 1;
+				}
+			} else {
+				flag = 0;
+			}
+    	}
+    	
+    	flag = 0;
+    	for (int j = 0; j < result.image.getHeight(); j ++) {
+			final int color = result.image.getRGB(offsetw1 + offsetw2 + offsetw3, j);
+			final int r = (color >> 16) & 0xff;
+			String colorr = (r > 127 ? "*" : " ");
+			if ("*".equals(colorr)) {
+				if (flag == 0) {
+					result.across[2] ++;
+					flag = 1;
+				}
+			} else {
+				flag = 0;
+			}
+    	}
+    	
+    	flag = 0;
+    	for (int i = 0; i < result.image.getWidth(); i ++) {
+			final int color = result.image.getRGB(i, offseth1);
+			final int r = (color >> 16) & 0xff;
+			String colorr = (r > 127 ? "*" : " ");
+			if ("*".equals(colorr)) {
+				if (flag == 0) {
+					result.across[3] ++;
+					flag = 1;
+				}
+			} else {
+				flag = 0;
+			}
+    	}
+    	
+    	flag = 0;
+    	for (int i = 0; i < result.image.getWidth(); i ++) {
+			final int color = result.image.getRGB(i, offseth1 + offseth2);
+			final int r = (color >> 16) & 0xff;
+			String colorr = (r > 127 ? "*" : " ");
+			if ("*".equals(colorr)) {
+				if (flag == 0) {
+					result.across[4] ++;
+					flag = 1;
+				}
+			} else {
+				flag = 0;
+			}
+    	}
+    	
+    	flag = 0;
+    	for (int i = 0; i < result.image.getWidth(); i ++) {
+			final int color = result.image.getRGB(i, offseth1 + offseth2 + offseth3);
+			final int r = (color >> 16) & 0xff;
+			String colorr = (r > 127 ? "*" : " ");
+			if ("*".equals(colorr)) {
+				if (flag == 0) {
+					result.across[5] ++;
+					flag = 1;
+				}
+			} else {
+				flag = 0;
+			}
+    	}
+    	System.out.println(Arrays.toString(result.across));
+    	return result;
+    }
     /**
      * 判断处理的前后顺序对结果的正确与否有影响。
-     * @param feature
+     * @param fea222ture
      * @return
      */
     public static String getCharByFeature(Feature feature) {
@@ -1173,30 +1559,30 @@ public class Image {
                 feature.features[23] == 0 &&
                 feature.features[25] == 0) {
                     result = "4";
-                    return result;
-            }
-            if (feature.features[6] == 0 &&
-                feature.features[7] == 0 &&
-                feature.features[11] == 0 &&
-                feature.features[12] == 0 &&
-                feature.features[15] == 0 &&
-                feature.features[16] == 0 &&
-                feature.features[19] == 0 &&
-                feature.features[20] == 0 &&
-                feature.features[24] == 0 &&
-                feature.features[25] == 0) {
-                    result = "7";
-                    return result;
-            }
-            if (feature.features[7] == 0 &&
-                feature.features[8] == 0 &&
-                feature.features[11] == 0 &&
-                feature.features[12] == 0 &&
-                feature.features[19] == 0 &&
-                feature.features[20] == 0) {
-                    result = "2";
-                    return result;
-            }
+//                    return result;
+        }
+        if (feature.features[6] == 0 &&
+            feature.features[7] == 0 &&
+            feature.features[11] == 0 &&
+            feature.features[12] == 0 &&
+            feature.features[15] == 0 &&
+            feature.features[16] == 0 &&
+            feature.features[19] == 0 &&
+            feature.features[20] == 0 &&
+            feature.features[24] == 0 &&
+            feature.features[25] == 0) {
+                result = "7";
+//                    return result;
+        }
+        if (feature.features[7] == 0 &&
+            feature.features[8] == 0 &&
+            feature.features[11] == 0 &&
+            feature.features[12] == 0 &&
+            feature.features[19] == 0 &&
+            feature.features[20] == 0) {
+                result = "2";
+//                    return result;
+        }
         if (feature.features[18] == 0) {
             /*
              * 11111
@@ -1215,7 +1601,7 @@ public class Image {
                 feature.features[22] == 0 &&
                 feature.features[23] == 0 ) {
                 result = "1";
-                return result;
+//                return result;
             }
             if (feature.features[6] == 0 && // 2020/04/21
                 feature.features[7] == 0 &&
@@ -1225,7 +1611,7 @@ public class Image {
                 feature.features[18] == 0&&
                 feature.features[19] == 0) { // 2020/04/21
                     result = "3";
-                    return result;
+//                    return result;
             }
             // 2020/04/21 ↓↓↓
             if (feature.features[10] == 0 &&
@@ -1238,7 +1624,7 @@ public class Image {
                      feature.features[6] != 0 && feature.features[21] != 0) {
                     result = "5";
                 }
-                return result;
+//                return result;
             }
             // 2020/04/21 ↑↑↑
             if (feature.features[10] == 0 &&
@@ -1251,7 +1637,7 @@ public class Image {
 //                    // TODO:不是共同特征，不具备通用性。
 //                    result = "6";
 //                }
-                return result;
+//                return result;
             }
             if (feature.features[7] == 0 &&
                 feature.features[8] == 0 &&
@@ -1260,19 +1646,130 @@ public class Image {
                 feature.features[18] == 0 &&
                 feature.features[25] == 0) {
                     result = "9";
-                    return result;
+//                    return result;
             }
             if (feature.features[8] == 0 &&
                 feature.features[17] == 0 &&
                 feature.features[18] == 0 &&
                 feature.features[19] == 0) {
                     result = "8";
-                    return result;
+//                    return result;
             }
             result = "6";
-            return result;
+//            return result;
+        }
+//        double hwR = feature.image.getHeight() / feature.image.getWidth();
+        if (feature.hwR >= 2.0d && "1".equals(result) == false) {
+        	System.out.println("■■WARNNING!!! 1■■");
         }
         return result;
+    }
+    public static String getCharByFeature2(Feature feature) {
+    	String result = null;
+    	if (feature.rh[1] < 35.0D && (feature.rw[9] > 70.0D || (feature.rw[9] == 0.0D && feature.rw[8] > 70.0D))) {
+    		result = "1";
+    	}
+    	if (feature.rw[1] < 25.0D && feature.rw[2] < 25.0D && feature.rw[3] < 25.0D && feature.rw[4] < 25.0D && feature.rw[5] < 25.0D && feature.rw[6] < 25.0D && feature.rw[7] < 25.0D &&  feature.rw[8] < 25.0D && feature.rw[9] < 25.0D) {
+    		// 2, 3, 7
+	    	if (feature.rh[1] < 30.0D && feature.rh[2] < 15.0D && feature.rh[3] < 15.0D && feature.rh[4] < 15.0D && feature.rh[5] < 15.0D && feature.rh[6] < 15.0D && feature.rh[7] < 15.0D && feature.rh[8] < 15.0D &&  feature.rh[9] > 70.0D) {
+	    		result = "2";
+	    	}
+	    	if ((feature.rh[1] > 25.0D || feature.rh[2] > 25.0D || feature.rh[3] > 25.0D) && (feature.rh[4] > 25.0D || feature.rh[5] > 25.0D || feature.rh[6] > 25.0D) && (feature.rh[7] > 25.0D || feature.rh[8] > 25.0D ||  feature.rh[9] > 25.0D)) {
+	    		result = "3";
+	    	}
+	    	if (feature.rh[1] > 75.0D && feature.rh[2] < 15.0D && feature.rh[3] < 15.0D && feature.rh[4] < 15.0D && feature.rh[5] < 15.0D && feature.rh[6] < 15.0D && feature.rh[7] < 15.0D && feature.rh[8] < 15.0D &&  feature.rh[9] < 15.0D) {
+	    		result = "7";
+	    	}
+    	}
+    	if ( feature.rw[8] > 60.0D &&  feature.rw[9]< 8.0D && feature.rh[8] > 60.0D) {
+    		result = "4";
+    	}
+    	if (feature.rh[1] > 35.0D && feature.rh[9] > 35.0D) {
+    		// 5, 6, 8, 9
+	    	if (feature.rw[2] > 35.0D ) {
+	    		result = "5";
+	    	}
+	    	if (feature.rw[9] > 30.0D) {
+	    		result = "6";
+	    	}
+	    	if (feature.rh[5] > 30.0D) {
+	    		result = "8";
+	    	}
+	    	if (feature.rh[6] > 29.0D) {
+	    		result = "9";
+	    	}
+    	}
+    	return result;
+    }
+    public static int[] getCharByFeature3(Feature feature) {
+    	int[] result = new int[0];
+    	if (feature.bgblock[0] == 0 && feature.bgblock[1] == 1 && feature.bgblock[2] == 0 && feature.bgblock[3]== 0) {
+    		result = new int[1];
+    		result[0] = 6;
+    	}
+    	if (feature.bgblock[0] == 0 && feature.bgblock[1] == 1 && feature.bgblock[2] == 1 && feature.bgblock[3]== 0) {
+    		result = new int[1];
+    		result[0] = 5;
+    	}
+    	if (feature.bgblock[0] == 0 && feature.bgblock[1] == 0 && feature.bgblock[2] == 1 && feature.bgblock[3]== 0) {
+			if (feature.across[0] == 3 && feature.across[2] == 3 && feature.across[3] == 2 && feature.across[4] == 2 && feature.across[5] == 1) {
+				result = new int[1];
+        		result[0] = 9;	
+			} else {
+				result = new int[1];
+//    		result[0] = 9;
+    			result[0] = 4;
+			}
+    	}
+    	if (feature.bgblock[0] == 1 && feature.bgblock[1] == 0 && feature.bgblock[2] == 1 && feature.bgblock[3]== 0) {
+    		if (feature.hwR > 2.0D) {
+    			// 高宽比＞2
+    			result = new int[1];
+        		result[0] = 1;
+    		} else {
+    			if (feature.across[1] == 2 && feature.across[2] == 2 && feature.across[3] == 1 && feature.across[4] == 1 && feature.across[5] == 1) {
+    				result = new int[1];
+            		result[0] = 7;	
+    			} else {
+    				if (feature.across[1] == 3) {
+    					result = new int[1];
+    	        		result[0] = 3;
+    				} else {
+    					result = new int[1];
+//		    			result[0] = 3;
+		    			result[0] = 4;
+    				}
+//	    		result[2] = 7;
+    			}
+    		}
+    	}
+    	if (feature.bgblock[0] == 1 && feature.bgblock[1] == 0 && feature.bgblock[2] == 0 && feature.bgblock[3]== 1) {
+    		result = new int[1];
+    		result[0] = 2;
+    	}
+    	if (feature.bgblock[0] == 1 && feature.bgblock[1] == 0 && feature.bgblock[2] == 1 && feature.bgblock[3]== 1) {
+			if (feature.across[1] == 2 && feature.across[2] == 2 && feature.across[3] == 1 && feature.across[4] == 1 && feature.across[5] == 1) {
+				result = new int[1];
+        		result[0] = 7;	
+			} else {
+	    		result = new int[1];
+	    		result[0] = 2;
+//	    		result[1] = 7;
+			}
+    	}
+    	if (feature.bgblock[0] == 0 && feature.bgblock[1] == 0 && feature.bgblock[2] == 0 && feature.bgblock[3]== 0) {
+    		if (feature.hwR > 2.0D) {
+    			// 高宽比＞2
+    			result = new int[1];
+        		result[0] = 1;
+    		} else {
+	    		result = new int[1];
+	    		result[0] = 8;
+//	    		result[1] = 1;
+//	    		result[1] = 0; // 0是九宫格的对象外暂不考虑(2021.10.02)
+    		}
+    	}
+    	return result;
     }
     public static Rect getSudokuRect(BufferedImage image) {
         Rect result = new Rect();

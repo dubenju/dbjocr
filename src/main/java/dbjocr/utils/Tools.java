@@ -510,7 +510,7 @@ public class Tools {
 
     public static void drawRects(BufferedImage bitmap, List<Rect> rectangles) {
     	Graphics2D g2d = (Graphics2D) bitmap.getGraphics();
-    	// g2d.setColor(Color.RED);
+//    	g2d.setColor(Color.RED);
     	g2d.setColor(new Color(0xFF, 0xFF, 0xFF));
     	g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
